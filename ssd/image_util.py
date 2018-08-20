@@ -1,7 +1,7 @@
-from PIL import Image
-import numpy as np
 import random
 import math
+import numpy as np
+from PIL import Image
 
 
 class sampler():
@@ -50,10 +50,10 @@ def generate_sample(sampler):
 
 
 def jaccard_overlap(sample_bbox, object_bbox):
-    if sample_bbox.xmin >= object_bbox.xmax or \
-            sample_bbox.xmax <= object_bbox.xmin or \
-            sample_bbox.ymin >= object_bbox.ymax or \
-            sample_bbox.ymax <= object_bbox.ymin:
+    if (sample_bbox.xmin >= object_bbox.xmax or
+            sample_bbox.xmax <= object_bbox.xmin or
+            sample_bbox.ymin >= object_bbox.ymax or
+            sample_bbox.ymax <= object_bbox.ymin):
         return 0
     intersect_xmin = max(sample_bbox.xmin, object_bbox.xmin)
     intersect_ymin = max(sample_bbox.ymin, object_bbox.ymin)
@@ -75,11 +75,11 @@ def satisfy_sample_constraint(sampler, sample_bbox, bbox_labels):
         object_bbox = bbox(bbox_labels[i][1], bbox_labels[i][2],
                            bbox_labels[i][3], bbox_labels[i][4])
         overlap = jaccard_overlap(sample_bbox, object_bbox)
-        if sampler.min_jaccard_overlap != 0 and \
-                overlap < sampler.min_jaccard_overlap:
+        if (sampler.min_jaccard_overlap != 0 and
+                overlap < sampler.min_jaccard_overlap):
             continue
-        if sampler.max_jaccard_overlap != 0 and \
-                overlap > sampler.max_jaccard_overlap:
+        if (sampler.max_jaccard_overlap != 0 and
+                overlap > sampler.max_jaccard_overlap):
             continue
         return True
     return False
@@ -115,10 +115,8 @@ def clip_bbox(src_bbox):
 def meet_emit_constraint(src_bbox, sample_bbox):
     center_x = (src_bbox.xmax + src_bbox.xmin) / 2
     center_y = (src_bbox.ymax + src_bbox.ymin) / 2
-    if center_x >= sample_bbox.xmin and \
-        center_x <= sample_bbox.xmax and \
-        center_y >= sample_bbox.ymin and \
-        center_y <= sample_bbox.ymax:
+    if (center_x >= sample_bbox.xmin and center_x <= sample_bbox.xmax and
+            center_y >= sample_bbox.ymin and center_y <= sample_bbox.ymax):
         return True
     return False
 

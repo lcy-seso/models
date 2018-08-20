@@ -17,6 +17,7 @@ import random
 import numpy as np
 from PIL import Image
 import xml.etree.ElementTree
+import pdb
 
 import image_util
 from paddle.utils.image_util import *
@@ -30,10 +31,10 @@ class Settings(object):
         for line in open(label_fpath):
             self._label_list.append(line.strip())
 
-        self._resize_height = resize_h
-        self._resize_width = resize_w
         self._img_mean = np.array(mean_value)[:, np.newaxis, np.newaxis].astype(
             "float32")
+        self._resize_height = resize_h
+        self._resize_width = resize_w
 
     @property
     def data_dir(self):
@@ -102,7 +103,15 @@ def _reader_creator(settings, file_list, mode, shuffle):
                     batch_sampler = []
                     # hard-code here
                     batch_sampler.append(
-                        image_util.sampler(1, 1, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0))
+                        image_util.sampler(
+                            max_sample=1,
+                            max_trial=1,
+                            min_scale=1.0,
+                            max_scale=1.0,
+                            min_aspect_ratio=1.0,
+                            max_aspect_ratio=1.0,
+                            min_jaccard_overlap=0.0,
+                            max_jaccard_overlap=0.0))
                     batch_sampler.append(
                         image_util.sampler(1, 50, 0.3, 1.0, 0.5, 2.0, 0.1, 0.0))
                     batch_sampler.append(
@@ -149,6 +158,7 @@ def _reader_creator(settings, file_list, mode, shuffle):
 
             if mode == "train" or mode == "test":
                 if mode == "train" and len(sample_labels) == 0: continue
+                pdb.set_trace()
                 yield img.astype("float32"), sample_labels
             elif mode == "infer":
                 yield img.astype("float32")
@@ -166,3 +176,18 @@ def test(settings, file_list):
 
 def infer(settings, file_list):
     return _reader_creator(settings, file_list, "infer", False)
+
+
+if __name__ == "__main__":
+    from config.pascal_voc_conf import cfg
+
+    train_file_list = "data/trainval.txt"
+    data_args = Settings(
+        data_dir="data",
+        label_file="label_list",
+        resize_h=cfg.IMG_HEIGHT,
+        resize_w=cfg.IMG_WIDTH,
+        mean_value=[104, 117, 124])
+
+    for idx, data in enumerate(train(data_args, train_file_list)()):
+        if idx > 5: break

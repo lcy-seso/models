@@ -1,11 +1,13 @@
 import paddle.v2 as paddle
+
 from config.pascal_voc_conf import cfg
 
 
 def net_conf(mode):
-    """Network configuration. Total three modes included 'train' 'eval'
-    and 'infer'. Loss and mAP evaluation layer will return if using 'train'
-    and 'eval'. In 'infer' mode, only detection output layer will be returned.
+    """
+    Network configuration. Total three modes included "train" "eval"
+    and "infer". Loss and mAP evaluation layer will return if using "train"
+    and "eval". In "infer" mode, only detection output layer will be returned.
     """
     default_l2regularization = cfg.TRAIN.L2REGULARIZATION
 
@@ -103,11 +105,18 @@ def net_conf(mode):
         stack_num = 2
         conv1_name = layer_name + "1"
         conv2_name = layer_name + "2"
-        conv2 = conv_group(stack_num, [conv1_name, conv2_name], input, [1, 3],
-                           num_channels, [num_filters1, num_filters2], [1, 2],
-                           [0, 1], default_bias_attr,
-                           get_param_attr(1, default_l2regularization),
-                           paddle.activation.Relu())
+        conv2 = conv_group(
+            stack_num,
+            [conv1_name, conv2_name],
+            input,
+            [1, 3],
+            num_channels,
+            [num_filters1, num_filters2],
+            [1, 2],
+            [0, 1],
+            default_bias_attr,
+            get_param_attr(1, default_l2regularization),
+            paddle.activation.Relu(), )
 
         loc_filters, conf_filters = get_loc_conf_filter_size(
             len(aspect_ratio), len(min_size), len(max_size))
@@ -124,17 +133,25 @@ def net_conf(mode):
         return conv2, mbox_loc, mbox_conf, mbox_priorbox
 
     img = paddle.layer.data(
-        name='image',
+        name="image",
         type=paddle.data_type.dense_vector(cfg.IMG_CHANNEL * cfg.IMG_HEIGHT *
                                            cfg.IMG_WIDTH),
         height=cfg.IMG_HEIGHT,
         width=cfg.IMG_WIDTH)
 
     stack_num = 2
-    conv1_2 = conv_group(stack_num, ['conv1_1', 'conv1_2'], img,
-                         [3] * stack_num, 3, [64] * stack_num, [1] * stack_num,
-                         [1] * stack_num, default_static_bias_attr,
-                         get_param_attr(0, 0), paddle.activation.Relu())
+    conv1_2 = conv_group(
+        stack_num,
+        ["conv1_1", "conv1_2"],
+        img,
+        [3] * stack_num,
+        3,
+        [64] * stack_num,
+        [1] * stack_num,
+        [1] * stack_num,
+        default_static_bias_attr,
+        get_param_attr(0, 0),
+        paddle.activation.Relu(), )
 
     pool1 = paddle.layer.img_pool(
         name="pool1",
@@ -145,10 +162,18 @@ def net_conf(mode):
         stride=2)
 
     stack_num = 2
-    conv2_2 = conv_group(stack_num, ['conv2_1', 'conv2_2'], pool1, [3] *
-                         stack_num, 64, [128] * stack_num, [1] * stack_num,
-                         [1] * stack_num, default_static_bias_attr,
-                         get_param_attr(0, 0), paddle.activation.Relu())
+    conv2_2 = conv_group(
+        stack_num,
+        ["conv2_1", "conv2_2"],
+        pool1,
+        [3] * stack_num,
+        64,
+        [128] * stack_num,
+        [1] * stack_num,
+        [1] * stack_num,
+        default_static_bias_attr,
+        get_param_attr(0, 0),
+        paddle.activation.Relu(), )
 
     pool2 = paddle.layer.img_pool(
         name="pool2",
@@ -176,21 +201,30 @@ def net_conf(mode):
     loc_filter_size, conf_filter_size = get_loc_conf_filter_size(
         len(CONV4_PB.ASPECT_RATIO),
         len(CONV4_PB.MIN_SIZE), len(CONV4_PB.MAX_SIZE))
-    conv4_3_norm_mbox_loc, conv4_3_norm_mbox_conf = \
-            mbox_block("conv4_3_norm", conv4_3_norm, 512, 3,
-                    loc_filter_size, conf_filter_size)
+    conv4_3_norm_mbox_loc, conv4_3_norm_mbox_conf = mbox_block(
+        "conv4_3_norm", conv4_3_norm, 512, 3, loc_filter_size, conf_filter_size)
 
     conv5_3, pool5 = vgg_block("5", pool4, 512, 512, 3, 1, 1)
 
     stack_num = 2
-    fc7 = conv_group(stack_num, ['fc6', 'fc7'], pool5, [3, 1], 512, [1024] *
-                     stack_num, [1] * stack_num, [1, 0], default_bias_attr,
-                     get_param_attr(1, default_l2regularization),
-                     paddle.activation.Relu())
+    fc7 = conv_group(
+        stack_num,
+        ["fc6", "fc7"],
+        pool5,
+        [3, 1],
+        512,
+        [1024] * stack_num,
+        [1] * stack_num,
+        [1, 0],
+        default_bias_attr,
+        get_param_attr(1, default_l2regularization),
+        paddle.activation.Relu(), )
 
     FC7_PB = cfg.NET.FC7.PB
     loc_filter_size, conf_filter_size = get_loc_conf_filter_size(
-        len(FC7_PB.ASPECT_RATIO), len(FC7_PB.MIN_SIZE), len(FC7_PB.MAX_SIZE))
+        len(FC7_PB.ASPECT_RATIO),
+        len(FC7_PB.MIN_SIZE),
+        len(FC7_PB.MAX_SIZE), )
     fc7_mbox_loc, fc7_mbox_conf = mbox_block("fc7", fc7, 1024, 3,
                                              loc_filter_size, conf_filter_size)
     fc7_mbox_priorbox = paddle.layer.priorbox(
@@ -201,24 +235,42 @@ def net_conf(mode):
         aspect_ratio=cfg.NET.FC7.PB.ASPECT_RATIO,
         variance=cfg.NET.FC7.PB.VARIANCE)
 
-    conv6_2, conv6_2_mbox_loc, conv6_2_mbox_conf, conv6_2_mbox_priorbox = \
-            ssd_block("6", fc7, img, 1024, 256, 512,
-                    cfg.NET.CONV6.PB.ASPECT_RATIO,
-                    cfg.NET.CONV6.PB.VARIANCE,
-                    cfg.NET.CONV6.PB.MIN_SIZE,
-                    cfg.NET.CONV6.PB.MAX_SIZE)
-    conv7_2, conv7_2_mbox_loc, conv7_2_mbox_conf, conv7_2_mbox_priorbox = \
-            ssd_block("7", conv6_2, img, 512, 128, 256,
-                    cfg.NET.CONV7.PB.ASPECT_RATIO,
-                    cfg.NET.CONV7.PB.VARIANCE,
-                    cfg.NET.CONV7.PB.MIN_SIZE,
-                    cfg.NET.CONV7.PB.MAX_SIZE)
-    conv8_2, conv8_2_mbox_loc, conv8_2_mbox_conf, conv8_2_mbox_priorbox = \
-            ssd_block("8", conv7_2, img, 256, 128, 256,
-                    cfg.NET.CONV8.PB.ASPECT_RATIO,
-                    cfg.NET.CONV8.PB.VARIANCE,
-                    cfg.NET.CONV8.PB.MIN_SIZE,
-                    cfg.NET.CONV8.PB.MAX_SIZE)
+    (conv6_2, conv6_2_mbox_loc, conv6_2_mbox_conf,
+     conv6_2_mbox_priorbox) = ssd_block(
+         "6",
+         fc7,
+         img,
+         1024,
+         256,
+         512,
+         cfg.NET.CONV6.PB.ASPECT_RATIO,
+         cfg.NET.CONV6.PB.VARIANCE,
+         cfg.NET.CONV6.PB.MIN_SIZE,
+         cfg.NET.CONV6.PB.MAX_SIZE, )
+    (conv7_2, conv7_2_mbox_loc, conv7_2_mbox_conf,
+     conv7_2_mbox_priorbox) = ssd_block(
+         "7",
+         conv6_2,
+         img,
+         512,
+         128,
+         256,
+         cfg.NET.CONV7.PB.ASPECT_RATIO,
+         cfg.NET.CONV7.PB.VARIANCE,
+         cfg.NET.CONV7.PB.MIN_SIZE,
+         cfg.NET.CONV7.PB.MAX_SIZE, )
+    (conv8_2, conv8_2_mbox_loc, conv8_2_mbox_conf,
+     conv8_2_mbox_priorbox) = ssd_block(
+         "8",
+         conv7_2,
+         img,
+         256,
+         128,
+         256,
+         cfg.NET.CONV8.PB.ASPECT_RATIO,
+         cfg.NET.CONV8.PB.VARIANCE,
+         cfg.NET.CONV8.PB.MIN_SIZE,
+         cfg.NET.CONV8.PB.MAX_SIZE, )
 
     pool6 = paddle.layer.img_pool(
         name="pool6",
@@ -230,32 +282,50 @@ def net_conf(mode):
     POOL6_PB = cfg.NET.POOL6.PB
     loc_filter_size, conf_filter_size = get_loc_conf_filter_size(
         len(POOL6_PB.ASPECT_RATIO),
-        len(POOL6_PB.MIN_SIZE), len(POOL6_PB.MAX_SIZE))
+        len(POOL6_PB.MIN_SIZE),
+        len(POOL6_PB.MAX_SIZE), )
     pool6_mbox_loc, pool6_mbox_conf = mbox_block(
-        "pool6", pool6, 256, 3, loc_filter_size, conf_filter_size)
+        "pool6",
+        pool6,
+        256,
+        3,
+        loc_filter_size,
+        conf_filter_size, )
     pool6_mbox_priorbox = paddle.layer.priorbox(
         input=pool6,
         image=img,
         min_size=cfg.NET.POOL6.PB.MIN_SIZE,
         max_size=cfg.NET.POOL6.PB.MAX_SIZE,
         aspect_ratio=cfg.NET.POOL6.PB.ASPECT_RATIO,
-        variance=cfg.NET.POOL6.PB.VARIANCE)
+        variance=cfg.NET.POOL6.PB.VARIANCE, )
 
     mbox_priorbox = paddle.layer.concat(
         name="mbox_priorbox",
         input=[
-            conv4_3_mbox_priorbox, fc7_mbox_priorbox, conv6_2_mbox_priorbox,
-            conv7_2_mbox_priorbox, conv8_2_mbox_priorbox, pool6_mbox_priorbox
+            conv4_3_mbox_priorbox,
+            fc7_mbox_priorbox,
+            conv6_2_mbox_priorbox,
+            conv7_2_mbox_priorbox,
+            conv8_2_mbox_priorbox,
+            pool6_mbox_priorbox,
         ])
 
     loc_loss_input = [
-        conv4_3_norm_mbox_loc, fc7_mbox_loc, conv6_2_mbox_loc, conv7_2_mbox_loc,
-        conv8_2_mbox_loc, pool6_mbox_loc
+        conv4_3_norm_mbox_loc,
+        fc7_mbox_loc,
+        conv6_2_mbox_loc,
+        conv7_2_mbox_loc,
+        conv8_2_mbox_loc,
+        pool6_mbox_loc,
     ]
 
     conf_loss_input = [
-        conv4_3_norm_mbox_conf, fc7_mbox_conf, conv6_2_mbox_conf,
-        conv7_2_mbox_conf, conv8_2_mbox_conf, pool6_mbox_conf
+        conv4_3_norm_mbox_conf,
+        fc7_mbox_conf,
+        conv6_2_mbox_conf,
+        conv7_2_mbox_conf,
+        conv8_2_mbox_conf,
+        pool6_mbox_conf,
     ]
 
     detection_out = paddle.layer.detection_output(
@@ -270,9 +340,9 @@ def net_conf(mode):
         background_id=cfg.BACKGROUND_ID,
         name="detection_output")
 
-    if mode == 'train' or mode == 'eval':
+    if mode == "train" or mode == "eval":
         bbox = paddle.layer.data(
-            name='bbox', type=paddle.data_type.dense_vector_sequence(6))
+            name="bbox", type=paddle.data_type.dense_vector_sequence(6))
         loss = paddle.layer.multibox_loss(
             input_loc=loc_loss_input,
             input_conf=conf_loss_input,
@@ -293,5 +363,10 @@ def net_conf(mode):
             ap_type=cfg.NET.DETMAP.AP_TYPE,
             name="detection_evaluator")
         return loss, detection_out
-    elif mode == 'infer':
+    elif mode == "infer":
         return detection_out
+
+
+if __name__ == "__main__":
+    from paddle.v2.layer import parse_network
+    print(parse_network(net_conf("train")))

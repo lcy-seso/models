@@ -1,5 +1,5 @@
-from easydict import EasyDict as edict
 import numpy as np
+from easydict import EasyDict as edict
 
 __C = edict()
 cfg = __C
@@ -20,7 +20,7 @@ __C.TRAIN.NUM_PASS = 200
 __C.TRAIN.L2REGULARIZATION = 0.0005 * 4
 __C.TRAIN.LEARNING_RATE_DECAY_A = 0.1
 __C.TRAIN.LEARNING_RATE_DECAY_B = 16551 * 80
-__C.TRAIN.LEARNING_RATE_SCHEDULE = 'discexp'
+__C.TRAIN.LEARNING_RATE_SCHEDULE = "discexp"
 
 __C.NET = edict()
 
